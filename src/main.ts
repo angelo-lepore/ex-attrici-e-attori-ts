@@ -255,6 +255,20 @@ function updateActor(actor: Actor, updates: Partial<Actor>): Actor {
   };
 }
 
+// 🎯 BONUS 3
+// Crea la funzione createRandomCouple che usa getAllActresses e getAllActors per restituire un’array che ha sempre 
+// due elementi: al primo posto una Actress casuale e al secondo posto un Actor casuale.
+
+async function createRandomCouple(): Promise<[Actress, Actor] | null> {
+  const [actresses, actors] = await Promise.all([getAllActresses(), getAllActors()]);
+  if (actresses.length === 0 || actors.length === 0) {
+    return null;
+  }
+  const randomActress = actresses[Math.floor(Math.random() * actresses.length)];
+  const randomActor = actors[Math.floor(Math.random() * actors.length)];
+  return [randomActress, randomActor];
+}
+
 // Esempi di utilizzo Actress
 getActress(1).then(actress => console.log(actress));
 getAllActresses().then(actresses => console.log(actresses));
@@ -264,3 +278,6 @@ getActresses([1, 2, 3]).then(actresses => console.log(actresses));
 getActor(1).then(actor => console.log(actor));
 getAllActors().then(actors => console.log(actors));
 getActors([1, 2, 3]).then(actors => console.log(actors));
+
+// Esempio di utilizzo createRandomCouple
+createRandomCouple().then(couple => console.log(couple));
