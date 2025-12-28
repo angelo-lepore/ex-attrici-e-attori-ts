@@ -1,5 +1,4 @@
 // 📌 Milestone 1
-
 // Crea un type alias Person per rappresentare una persona generica.
 // Il tipo deve includere le seguenti proprietà:
 
@@ -20,7 +19,6 @@ type Person = {
 };
 
 // 📌 Milestone 2
-
 // Crea un type alias Actress che oltre a tutte le proprietà di Person, aggiunge le seguenti proprietà:
 
 // most_famous_movies: una tuple di 3 stringhe
@@ -42,37 +40,35 @@ type Actress = Person & {
 // La funzione deve restituire l’oggetto Actress, se esiste, oppure null se non trovato.
 // Utilizza un type guard chiamato isActress per assicurarti che la struttura del dato ricevuto sia corretta.
 
-function isActress(dati: unknown): dati is Actress {
+function isPerson(dati: unknown): dati is Person {
   if (typeof dati !== "object" || dati === null) {
     return false;
   }
-
   const obj = dati as Record<string, unknown>;
-
   return (
     typeof obj.id === "number" &&
     typeof obj.name === "string" &&
     typeof obj.birth_year === "number" &&
     (obj.death_year === undefined || typeof obj.death_year === "number") &&
     typeof obj.biography === "string" &&
-    typeof obj.image === "string" &&
+    typeof obj.image === "string"
+  );
+}
+
+function isActress(dati: unknown): dati is Actress {
+  if (!isPerson(dati)) {
+    return false;
+  }
+
+  const obj = dati as Record<string, unknown>;
+
+  return (
     Array.isArray(obj.most_famous_movies) &&
     obj.most_famous_movies.length === 3 &&
     obj.most_famous_movies.every(movie => typeof movie === "string") &&
     typeof obj.awards === "string" &&
     typeof obj.nationality === "string" &&
-    [
-      "American",
-      "British",
-      "Australian",
-      "Israeli-American",
-      "South African",
-      "French",
-      "Indian",
-      "Israeli",
-      "Spanish",
-      "South Korean",
-      "Chinese",
+    [ "American", "British", "Australian", "Israeli-American", "South African", "French", "Indian", "Israeli", "Spanish", "South Korean", "Chinese",
     ].includes(obj.nationality)
   );
 }
@@ -133,7 +129,138 @@ async function getActresses(ids: number[]): Promise<(Actress | null)[]> {
 }
 }
 
-// Esempi di utilizzo (puoi rimuoverli in produzione)
+// 🎯 BONUS 1
+// Crea le funzioni:
+
+// createActress
+// updateActress
+
+// Utilizza gli Utility Types:
+
+// Omit: per creare un'attrice senza passare id, che verrà generato casualmente.
+// Partial: per permettere l’aggiornamento di qualsiasi proprietà tranne id e name.
+
+function createActress(data: Omit<Actress, "id">): Actress {
+  return {
+    ...data,
+    id: Math.floor(Math.random() * 10000),
+  };
+}
+
+function updateActress( actress: Actress, updates: Partial<Actress>): Actress {
+  return {
+    ...actress,
+    ...updates,
+    id: actress.id,
+    name: actress.name,
+  };
+}
+
+// 🎯 BONUS 2
+// Crea un tipo Actor, che estende Person con le seguenti differenze rispetto ad Actress:
+
+// known_for: una tuple di 3 stringhe
+// awards: array di una o due stringhe
+// nationality: le stesse di Actress più:
+// Scottish, New Zealand, Hong Kong, German, Canadian, Irish.
+
+// Implementa anche le versioni getActor, getAllActors, getActors, createActor, updateActor.
+
+type Actor = Person & {
+  known_for: [string, string, string];
+  awards: [string] | [string, string];
+  nationality: "American" | "British" | "Australian" | "Israeli-American" |
+    "South African" | "French" | "Indian" | "Israeli" | "Spanish" |
+    "South Korean" | "Chinese" | "Scottish" | "New Zealand" | "Hong Kong" |
+    "German" | "Canadian" | "Irish";
+};
+
+function isActor(dati: unknown): dati is Actor {
+  if (!isPerson(dati)) {
+    return false;
+  }
+
+  const obj = dati as Record<string, unknown>;
+
+  return (
+    Array.isArray(obj.known_for) &&
+    obj.known_for.length === 3 &&
+    obj.known_for.every(movie => typeof movie === "string") &&
+    Array.isArray(obj.awards) &&
+    (obj.awards.length === 1 || obj.awards.length === 2) &&
+    obj.awards.every(award => typeof award === "string") &&
+    typeof obj.nationality === "string" &&
+    [ "American", "British", "Australian", "Israeli-American", "South African", "French", "Indian", "Israeli", "Spanish", "South Korean", "Chinese", "Scottish", "New Zealand", "Hong Kong", "German", "Canadian", "Irish"
+    ].includes(obj.nationality)
+  );
+}
+
+async function getActor (id: number): Promise<Actor | null> {
+  try {
+    const response = await fetch(`http://localhost:3333/actors/${id}`);
+    const dati: unknown = await response.json();
+    if (!isActor(dati)) {
+      throw new Error("Dati non validi");
+    } else {
+      return dati;
+    }
+  } catch (error) {
+    console.error("Errore nella chiamata API:", error);
+    return null;
+  }
+}
+
+async function getAllActors(): Promise<Actor[]> {
+  try {
+    const response = await fetch(`http://localhost:3333/actors`);
+    if (!response.ok) {
+      throw new Error("Errore nella chiamata API");
+    }
+    const dati: unknown = await response.json();
+    if (!(dati instanceof Array)) {
+      throw new Error("Dati non validi");
+    }
+    const actors: Actor[] = dati.filter(isActor);
+    return actors;
+  } catch (error) {
+    console.error("Errore nella chiamata API:", error);
+    return [];
+  }
+}
+
+async function getActors(ids: number[]): Promise<(Actor | null)[]> {
+  try {
+  const promises = ids.map(id => getActor(id));
+  const actors = await Promise.all(promises);
+  return actors;
+  } catch (error) {
+  console.error("Errore nel recupero degli attori:", error);
+  return [];
+  }
+}
+
+function createActor(data: Omit<Actor, "id">): Actor {
+  return {
+    ...data,
+    id: Math.floor(Math.random() * 10000),
+  };
+}
+
+function updateActor(actor: Actor, updates: Partial<Actor>): Actor {
+  return {
+    ...actor,
+    ...updates,
+    id: actor.id,
+    name: actor.name,
+  };
+}
+
+// Esempi di utilizzo Actress
 getActress(1).then(actress => console.log(actress));
 getAllActresses().then(actresses => console.log(actresses));
 getActresses([1, 2, 3]).then(actresses => console.log(actresses));
+
+// Esempi di utilizzo Actor
+getActor(1).then(actor => console.log(actor));
+getAllActors().then(actors => console.log(actors));
+getActors([1, 2, 3]).then(actors => console.log(actors));
